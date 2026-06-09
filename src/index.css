@@ -1,0 +1,232 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --color-primary-50: #e6f0fa;
+  --color-primary-100: #b3d4f1;
+  --color-primary-200: #80b8e8;
+  --color-primary-300: #4d9cdf;
+  --color-primary-400: #2680d6;
+  --color-primary-500: #185FA5;
+  --color-primary-600: #134d87;
+  --color-primary-700: #0e3a69;
+  --color-primary-800: #09274b;
+  --color-primary-900: #04142d;
+  --color-paid: #1D9E75;
+  --color-paid-light: #e8f8f2;
+  --color-unpaid: #A32D2D;
+  --color-unpaid-light: #fceaea;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f8fafc;
+  --color-border: #e2e8f0;
+  --color-text: #1e293b;
+  --color-text-secondary: #64748b;
+  --color-amber-50: #fffbeb;
+  --color-amber-100: #fef3c7;
+  --color-amber-500: #f59e0b;
+  --color-amber-600: #d97706;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-surface-alt);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-primary-200);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary-300);
+}
+
+body {
+  font-family: var(--font-sans);
+  background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 50%, #dbeafe 100%);
+  min-height: 100vh;
+  color: var(--color-text);
+}
+
+/* Checkbox custom styling */
+.checkbox-paid {
+  accent-color: var(--color-paid);
+}
+.checkbox-unpaid {
+  accent-color: var(--color-unpaid);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(24, 95, 165, 0.2); }
+  50% { box-shadow: 0 0 0 8px rgba(24, 95, 165, 0); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+.animate-slide-down {
+  animation: slideDown 0.3s ease-out forwards;
+}
+.animate-slide-in {
+  animation: slideIn 0.35s ease-out forwards;
+}
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+.animate-pulse-glow {
+  animation: pulse-glow 2s infinite;
+}
+
+/* Glass card effect */
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+/* Table scroll shadow */
+.table-container {
+  position: relative;
+  overflow-x: auto;
+}
+
+/* Lock screen background */
+.lock-bg {
+  background: linear-gradient(135deg, #0e3a69 0%, #185FA5 40%, #2680d6 100%);
+}
+
+/* Tab navigation */
+.tab-button {
+  position: relative;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-radius: 0.75rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+.tab-active {
+  background: var(--color-primary-500);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(24, 95, 165, 0.3);
+}
+.tab-inactive {
+  background: var(--color-surface-alt);
+  color: var(--color-text-secondary);
+}
+.tab-inactive:hover {
+  background: var(--color-primary-50);
+  color: var(--color-primary-500);
+}
+
+/* Health Card banner */
+.health-card-banner {
+  background: linear-gradient(135deg, rgba(24, 95, 165, 0.04) 0%, rgba(29, 158, 117, 0.04) 100%);
+  border: 1px dashed var(--color-primary-200);
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  margin: 0.5rem 0;
+}
+
+/* Year selector */
+.year-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(4px);
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.year-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+.year-nav-btn:active {
+  transform: scale(0.93);
+}
+
+/* Fund log entry row animation */
+.fund-log-row {
+  animation: slideIn 0.35s ease-out forwards;
+}
+
+/* Status badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  line-height: 1;
+}
+.badge-paid {
+  background: var(--color-paid-light);
+  color: var(--color-paid);
+}
+.badge-unpaid {
+  background: var(--color-unpaid-light);
+  color: var(--color-unpaid);
+}
+.badge-pending {
+  background: var(--color-amber-100);
+  color: var(--color-amber-600);
+}
+.badge-info {
+  background: var(--color-primary-50);
+  color: var(--color-primary-500);
+}
+
+/* Confirm button shimmer */
+.btn-confirm {
+  position: relative;
+  overflow: hidden;
+}
+.btn-confirm::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2.5s infinite;
+  pointer-events: none;
+}
