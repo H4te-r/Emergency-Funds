@@ -8,10 +8,39 @@ export const MONTHS = [
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
-export const AMOUNT_PER_MONTH = 500; // ₱500 per sibling per month
+export const AMOUNT_PER_MONTH = 500; // ₱500 per sibling per month (default)
 export const DEFAULT_PASSWORD = 'admin123';
 export const HEALTH_CARD_COST = 22500; // ₱2,500 × 9 siblings
 export const HEALTH_CARD_PER_SIBLING = 2500;
+
+// ============================================================
+//  Per-month amount logic — single source of truth
+// ============================================================
+
+/**
+ * Get the expected contribution amount per sibling for a given month and year.
+ * - 2026 Jan–May: ₱0 (locked / not started)
+ * - 2026 June: ₱2,500 (one-time health card payment)
+ * - 2026 July–Dec: ₱500
+ * - 2027+: ₱500 for all 12 months
+ */
+export function getMonthAmount(year, monthName) {
+  const monthIndex = MONTHS.indexOf(monthName);
+  if (year === 2026) {
+    if (monthIndex < 5) return 0;       // Jan–May 2026: locked
+    if (monthIndex === 5) return 2500;   // June 2026: ₱2,500/sibling
+    return 500;                          // Jul–Dec 2026: ₱500
+  }
+  return 500; // 2027+ all months ₱500
+}
+
+/**
+ * Check if a month is active (interactive) for a given year.
+ * Inactive months cannot have payments toggled.
+ */
+export function isMonthActive(year, monthName) {
+  return getMonthAmount(year, monthName) > 0;
+}
 
 // Storage key prefixes
 const DATA_PREFIX = 'family-fund-data-';
@@ -128,26 +157,28 @@ export function formatPeso(amount) {
 
 /**
  * Calculate summary statistics from payment data for a single year.
+ * Uses getMonthAmount() for variable per-month amounts.
  */
-export function calculateStats(data) {
-  let totalPaid = 0;
-  let totalUnpaid = 0;
-  const totalExpected = SIBLINGS.length * MONTHS.length * AMOUNT_PER_MONTH;
+export function calculateStats(data, year) {
+  let totalCollected = 0;
+  let totalExpected = 0;
+  let unpaidCount = 0;
 
   MONTHS.forEach(month => {
+    const amt = getMonthAmount(year, month);
+    if (amt === 0) return; // skip locked/inactive months
+    totalExpected += amt * SIBLINGS.length;
     SIBLINGS.forEach(sibling => {
       if (data[month][sibling]) {
-        totalPaid++;
+        totalCollected += amt;
       } else {
-        totalUnpaid++;
+        unpaidCount++;
       }
     });
   });
 
-  const totalCollected = totalPaid * AMOUNT_PER_MONTH;
   const balance = totalExpected - totalCollected;
-
-  return { totalCollected, totalExpected, balance, unpaidCount: totalUnpaid };
+  return { totalCollected, totalExpected, balance, unpaidCount };
 }
 
 /**
@@ -161,16 +192,22 @@ export function calculateAllYearsStats() {
 
   years.forEach(year => {
     const data = loadData(year);
-    const stats = calculateStats(data);
+    const stats = calculateStats(data, year);
     totalCollected += stats.totalCollected;
     totalExpected += stats.totalExpected;
     unpaidCount += stats.unpaidCount;
   });
 
-  // If no years exist yet, show a single year's expected
+  // If no years exist yet, show current year's expected
   if (years.length === 0) {
-    totalExpected = SIBLINGS.length * MONTHS.length * AMOUNT_PER_MONTH;
-    unpaidCount = SIBLINGS.length * MONTHS.length;
+    const currentYear = new Date().getFullYear();
+    MONTHS.forEach(month => {
+      const amt = getMonthAmount(currentYear, month);
+      if (amt > 0) {
+        totalExpected += amt * SIBLINGS.length;
+        unpaidCount += SIBLINGS.length;
+      }
+    });
   }
 
   const balance = totalExpected - totalCollected;
@@ -179,6 +216,7 @@ export function calculateAllYearsStats() {
 
 /**
  * Calculate total contributions collected across ALL years (for fund balance).
+ * Uses getMonthAmount() for variable per-month amounts.
  */
 export function calculateAllTimeContributions() {
   const years = getStoredYears();
@@ -186,9 +224,10 @@ export function calculateAllTimeContributions() {
   years.forEach(year => {
     const data = loadData(year);
     MONTHS.forEach(month => {
+      const amt = getMonthAmount(year, month);
       SIBLINGS.forEach(sibling => {
         if (data[month][sibling]) {
-          total += AMOUNT_PER_MONTH;
+          total += amt;
         }
       });
     });
@@ -200,12 +239,13 @@ export function calculateAllTimeContributions() {
  * Calculate contributions collected up to and including a specific month in a year.
  * Used for health card logic (Jan–June pool balance).
  */
-export function calculatePoolBalanceUpToMonth(data, monthIndex) {
+export function calculatePoolBalanceUpToMonth(data, monthIndex, year) {
   let total = 0;
   for (let i = 0; i <= monthIndex && i < MONTHS.length; i++) {
+    const amt = getMonthAmount(year, MONTHS[i]);
     SIBLINGS.forEach(sibling => {
       if (data[MONTHS[i]][sibling]) {
-        total += AMOUNT_PER_MONTH;
+        total += amt;
       }
     });
   }

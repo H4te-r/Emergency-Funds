@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import {
   MONTHS, loadData, saveData, calculateStats, calculateAllYearsStats,
-  migrateOldData,
+  migrateOldData, isMonthActive,
 } from './data';
 import LockScreen from './components/LockScreen';
 import SummaryCards from './components/SummaryCards';
@@ -31,6 +31,8 @@ export default function App() {
   const handleLock = useCallback(() => setLocked(true), []);
 
   const handleToggle = useCallback((month, sibling) => {
+    // Block toggling for inactive months (e.g., Jan-May 2026)
+    if (!isMonthActive(selectedYear, month)) return;
     setData(prev => {
       const next = { ...prev, [month]: { ...prev[month], [sibling]: !prev[month][sibling] } };
       saveData(selectedYear, next);
@@ -54,7 +56,7 @@ export default function App() {
     return <LockScreen onUnlock={handleUnlock} />;
   }
 
-  const stats = showAllYears ? calculateAllYearsStats() : calculateStats(data);
+  const stats = showAllYears ? calculateAllYearsStats() : calculateStats(data, selectedYear);
   const filteredMonths = activeMonth ? [activeMonth] : MONTHS;
 
   return (
@@ -104,6 +106,7 @@ export default function App() {
         <SummaryCards
           key={`summary-${fundVersion}`}
           stats={stats}
+          selectedYear={selectedYear}
           showAllYears={showAllYears}
           onToggleAllYears={() => setShowAllYears(prev => !prev)}
         />
@@ -139,7 +142,7 @@ export default function App() {
         {/* Tab Content */}
         {activeTab === 'tracker' ? (
           <>
-            <MonthFilter activeMonth={activeMonth} onSelect={setActiveMonth} />
+            <MonthFilter activeMonth={activeMonth} onSelect={setActiveMonth} selectedYear={selectedYear} />
             <PaymentTable
               data={data}
               filteredMonths={filteredMonths}

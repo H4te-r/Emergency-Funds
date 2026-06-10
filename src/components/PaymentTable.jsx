@@ -1,20 +1,19 @@
 import { useState } from 'react';
 import {
-  SIBLINGS, MONTHS, AMOUNT_PER_MONTH, HEALTH_CARD_COST,
-  formatPeso, calculatePoolBalanceUpToMonth,
+  SIBLINGS, MONTHS, HEALTH_CARD_COST,
+  formatPeso, getMonthAmount, isMonthActive, calculateFundBalance,
   loadHealthCardStatus, saveHealthCardStatus,
   saveFundLog, loadFundLog,
 } from '../data';
 
-function HealthCardBanner({ data, selectedYear, onFundUpdate }) {
+function HealthCardBanner({ selectedYear, onFundUpdate }) {
   const [hcStatus, setHcStatus] = useState(() => loadHealthCardStatus(selectedYear));
   const [confirming, setConfirming] = useState(false);
 
-  // Recalculate when year changes — we key by selectedYear in parent
-  const juneIndex = 5; // June is index 5
-  const poolBalance = calculatePoolBalanceUpToMonth(data, juneIndex);
-  const isCovered = poolBalance >= HEALTH_CARD_COST;
-  const shortfall = HEALTH_CARD_COST - poolBalance;
+  // Use all-time fund balance to check coverage
+  const fundBalance = calculateFundBalance();
+  const isCovered = fundBalance.currentBalance >= HEALTH_CARD_COST;
+  const shortfall = HEALTH_CARD_COST - fundBalance.currentBalance;
 
   function handleConfirmPaid() {
     setConfirming(true);
@@ -69,7 +68,7 @@ function HealthCardBanner({ data, selectedYear, onFundUpdate }) {
                   Parents&apos; Health Card Deduction
                 </p>
                 <p className="text-xs text-text-secondary">
-                  Annual cost: {formatPeso(HEALTH_CARD_COST)} (₱2,500 × 9 siblings)
+                  Annual cost: {formatPeso(HEALTH_CARD_COST)} · Fund balance: {formatPeso(fundBalance.currentBalance)}
                 </p>
               </div>
             </div>
@@ -104,7 +103,7 @@ function HealthCardBanner({ data, selectedYear, onFundUpdate }) {
                     disabled={confirming}
                     className="btn-confirm px-4 py-1.5 rounded-lg bg-gradient-to-r from-paid to-primary-500 text-white text-xs font-bold hover:shadow-md active:scale-95 transition-all cursor-pointer disabled:opacity-50"
                   >
-                    {confirming ? 'Processing...' : 'Confirm: Paid from Fund'}
+                    {confirming ? 'Processing...' : `Confirm: Deduct ${formatPeso(HEALTH_CARD_COST)} from Fund`}
                   </button>
                 </>
               ) : (
@@ -121,17 +120,24 @@ function HealthCardBanner({ data, selectedYear, onFundUpdate }) {
 }
 
 export default function PaymentTable({ data, filteredMonths, onToggle, selectedYear, onFundUpdate }) {
-  // Calculate yearly totals per sibling
+  // Calculate yearly totals per sibling (only active months)
   const siblingTotals = {};
   SIBLINGS.forEach(sib => {
-    siblingTotals[sib] = MONTHS.reduce((sum, m) => sum + (data[m][sib] ? AMOUNT_PER_MONTH : 0), 0);
+    siblingTotals[sib] = MONTHS.reduce((sum, m) => {
+      const amt = getMonthAmount(selectedYear, m);
+      return sum + (data[m][sib] ? amt : 0);
+    }, 0);
   });
   const grandTotal = Object.values(siblingTotals).reduce((a, b) => a + b, 0);
 
   // Calculate row totals per month
   function monthTotal(month) {
-    return SIBLINGS.reduce((sum, sib) => sum + (data[month][sib] ? AMOUNT_PER_MONTH : 0), 0);
+    const amt = getMonthAmount(selectedYear, month);
+    return SIBLINGS.reduce((sum, sib) => sum + (data[month][sib] ? amt : 0), 0);
   }
+
+  // Health card banner only shows from 2027 onwards (June 2026 IS the health card collection)
+  const showHealthCardForYear = selectedYear >= 2027;
 
   return (
     <div className="glass-card rounded-xl overflow-hidden animate-fade-in" style={{ animationDelay: '400ms' }}>
@@ -157,24 +163,47 @@ export default function PaymentTable({ data, filteredMonths, onToggle, selectedY
           {/* Body */}
           <tbody>
             {filteredMonths.map((month, idx) => {
+              const active = isMonthActive(selectedYear, month);
+              const amt = getMonthAmount(selectedYear, month);
               const isJune = month === 'June';
-              const showHealthCard = isJune;
+              const showHealthCard = isJune && showHealthCardForYear;
 
               return (
                 <>
                   <tr
                     key={month}
-                    className={`border-b border-border transition-colors hover:bg-primary-50/40 ${
-                      idx % 2 === 0 ? 'bg-white' : 'bg-surface-alt'
+                    className={`border-b border-border transition-colors ${
+                      !active
+                        ? 'month-locked'
+                        : `hover:bg-primary-50/40 ${idx % 2 === 0 ? 'bg-white' : 'bg-surface-alt'}`
                     }`}
                   >
-                    <td className={`sticky left-0 z-10 px-4 py-3 font-semibold text-primary-700 whitespace-nowrap ${
-                      idx % 2 === 0 ? 'bg-white' : 'bg-surface-alt'
+                    <td className={`sticky left-0 z-10 px-4 py-3 font-semibold whitespace-nowrap ${
+                      !active
+                        ? 'bg-gray-50 text-gray-400'
+                        : `${idx % 2 === 0 ? 'bg-white' : 'bg-surface-alt'} text-primary-700`
                     }`}>
-                      {month}
+                      <div className="flex flex-col">
+                        <span>{month}</span>
+                        {active && amt !== 500 && (
+                          <span className="text-[10px] font-bold text-amber-600 mt-0.5">
+                            ₱{amt.toLocaleString()}/each
+                          </span>
+                        )}
+                      </div>
                     </td>
                     {SIBLINGS.map(sib => {
                       const paid = data[month][sib];
+
+                      if (!active) {
+                        // Locked month — show "Not started" badge, no checkbox
+                        return (
+                          <td key={sib} className="px-3 py-2.5 text-center">
+                            <span className="badge-locked">Not started</span>
+                          </td>
+                        );
+                      }
+
                       return (
                         <td key={sib} className="px-3 py-2.5 text-center">
                           <div className="flex flex-col items-center gap-1.5">
@@ -198,16 +227,17 @@ export default function PaymentTable({ data, filteredMonths, onToggle, selectedY
                         </td>
                       );
                     })}
-                    <td className="px-4 py-3 text-center font-bold text-primary-700 whitespace-nowrap">
-                      {formatPeso(monthTotal(month))}
+                    <td className={`px-4 py-3 text-center font-bold whitespace-nowrap ${
+                      !active ? 'text-gray-400' : 'text-primary-700'
+                    }`}>
+                      {active ? formatPeso(monthTotal(month)) : '—'}
                     </td>
                   </tr>
 
-                  {/* Health Card Deduction Banner — after June row */}
+                  {/* Health Card Deduction Banner — after June row, 2027+ only */}
                   {showHealthCard && (
                     <HealthCardBanner
                       key={`hc-${selectedYear}`}
-                      data={data}
                       selectedYear={selectedYear}
                       onFundUpdate={onFundUpdate}
                     />

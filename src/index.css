@@ -230,3 +230,40 @@ body {
   animation: shimmer 2.5s infinite;
   pointer-events: none;
 }
+
+/* Locked/inactive month row (e.g., Jan–May 2026) */
+.month-locked {
+  background: repeating-linear-gradient(
+    135deg,
+    #f9fafb,
+    #f9fafb 10px,
+    #f3f4f6 10px,
+    #f3f4f6 20px
+  ) !important;
+  opacity: 0.85;
+}
+.month-locked:hover {
+  background: repeating-linear-gradient(
+    135deg,
+    #f3f4f6,
+    #f3f4f6 10px,
+    #e5e7eb 10px,
+    #e5e7eb 20px
+  ) !important;
+}
+
+/* "Not started" badge for locked months */
+.badge-locked {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  background: #e5e7eb;
+  color: #9ca3af;
+}
+

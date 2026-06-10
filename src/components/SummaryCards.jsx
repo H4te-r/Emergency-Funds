@@ -51,7 +51,7 @@ const CARD_CONFIG = [
   },
 ];
 
-export default function SummaryCards({ stats, showAllYears, onToggleAllYears }) {
+export default function SummaryCards({ stats, selectedYear, showAllYears, onToggleAllYears }) {
   const fundBalance = calculateFundBalance();
 
   return (

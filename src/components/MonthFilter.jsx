@@ -1,6 +1,6 @@
-import { MONTHS } from '../data';
+import { MONTHS, isMonthActive } from '../data';
 
-export default function MonthFilter({ activeMonth, onSelect }) {
+export default function MonthFilter({ activeMonth, onSelect, selectedYear }) {
   return (
     <div className="glass-card rounded-xl p-4 animate-fade-in" style={{ animationDelay: '320ms' }}>
       <div className="flex items-center gap-2 mb-3">
@@ -21,20 +21,25 @@ export default function MonthFilter({ activeMonth, onSelect }) {
         >
           All
         </button>
-        {MONTHS.map(month => (
-          <button
-            key={month}
-            id={`filter-${month.toLowerCase()}`}
-            onClick={() => onSelect(month)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              activeMonth === month
-                ? 'bg-primary-500 text-white shadow-md'
-                : 'bg-surface-alt text-text-secondary hover:bg-primary-50 hover:text-primary-500'
-            }`}
-          >
-            {month.slice(0, 3)}
-          </button>
-        ))}
+        {MONTHS.map(month => {
+          const active = isMonthActive(selectedYear, month);
+          return (
+            <button
+              key={month}
+              id={`filter-${month.toLowerCase()}`}
+              onClick={() => onSelect(month)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                activeMonth === month
+                  ? 'bg-primary-500 text-white shadow-md'
+                  : active
+                    ? 'bg-surface-alt text-text-secondary hover:bg-primary-50 hover:text-primary-500'
+                    : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+              }`}
+            >
+              {month.slice(0, 3)}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
